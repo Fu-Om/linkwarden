@@ -17,6 +17,8 @@ import toast from "react-hot-toast";
 import { useTranslation } from "next-i18next";
 import { useCollections, useUpdateCollection } from "@/hooks/store/collections";
 import { useUpdateUser, useUser } from "@/hooks/store/user";
+import Icon from "./Icon";
+import { IconWeight } from "@phosphor-icons/react";
 
 interface ExtendedTreeItem extends TreeItem {
   data: Collection;
@@ -27,7 +29,7 @@ const CollectionListing = () => {
   const updateCollection = useUpdateCollection();
   const { data: collections = [], isLoading } = useCollections();
 
-  const { data: user = {} } = useUser();
+  const { data: user = {}, refetch } = useUser();
   const updateUser = useUpdateUser();
 
   const router = useRouter();
@@ -36,25 +38,23 @@ const CollectionListing = () => {
   const [tree, setTree] = useState<TreeData | undefined>();
 
   const initialTree = useMemo(() => {
-    if (
-      // !tree &&
-      collections.length > 0
-    ) {
+    if (collections.length > 0) {
       return buildTreeFromCollections(
         collections,
         router,
+        tree,
         user.collectionOrder
       );
     } else return undefined;
   }, [collections, user, router]);
 
   useEffect(() => {
-    // if (!tree)
     setTree(initialTree);
   }, [initialTree]);
 
   useEffect(() => {
     if (user.username) {
+      refetch();
       if (
         (!user.collectionOrder || user.collectionOrder.length === 0) &&
         collections.length > 0
@@ -62,11 +62,7 @@ const CollectionListing = () => {
         updateUser.mutate({
           ...user,
           collectionOrder: collections
-            .filter(
-              (e) =>
-                e.parentId === null ||
-                !collections.find((i) => i.id === e.parentId)
-            ) // Filter out collections with non-null parentId
+            .filter((e) => e.parentId === null)
             .map((e) => e.id as number),
         });
       else {
@@ -100,7 +96,7 @@ const CollectionListing = () => {
         }
       }
     }
-  }, [collections]);
+  }, [user, collections]);
 
   const onExpand = (movedCollectionId: ItemId) => {
     setTree((currentTree) =>
@@ -256,7 +252,7 @@ const renderItem = (
             : "hover:bg-neutral/20"
         } duration-100 flex gap-1 items-center pr-2 pl-1 rounded-md`}
       >
-        {Icon(item as ExtendedTreeItem, onExpand, onCollapse)}
+        {Dropdown(item as ExtendedTreeItem, onExpand, onCollapse)}
 
         <Link
           href={`/collections/${collection.id}`}
@@ -266,18 +262,29 @@ const renderItem = (
           <div
             className={`py-1 cursor-pointer flex items-center gap-2 w-full rounded-md h-8 capitalize`}
           >
-            <i
-              className="bi-folder-fill text-2xl drop-shadow"
-              style={{ color: collection.color }}
-            ></i>
+            {collection.icon ? (
+              <Icon
+                icon={collection.icon}
+                size={30}
+                weight={(collection.iconWeight || "regular") as IconWeight}
+                color={collection.color}
+                className="-mr-[0.15rem]"
+              />
+            ) : (
+              <i
+                className="bi-folder-fill text-2xl"
+                style={{ color: collection.color }}
+              ></i>
+            )}
+
             <p className="truncate w-full">{collection.name}</p>
 
-            {collection.isPublic ? (
+            {collection.isPublic && (
               <i
                 className="bi-globe2 text-sm text-black/50 dark:text-white/50 drop-shadow"
                 title="This collection is being shared publicly."
               ></i>
-            ) : undefined}
+            )}
             <div className="drop-shadow text-neutral text-xs">
               {collection._count?.links}
             </div>
@@ -288,7 +295,7 @@ const renderItem = (
   );
 };
 
-const Icon = (
+const Dropdown = (
   item: ExtendedTreeItem,
   onExpand: (id: ItemId) => void,
   onCollapse: (id: ItemId) => void
@@ -311,6 +318,7 @@ const Icon = (
 const buildTreeFromCollections = (
   collections: CollectionIncludingMembersAndLinkCount[],
   router: ReturnType<typeof useRouter>,
+  tree?: TreeData,
   order?: number[]
 ): TreeData => {
   if (order) {
@@ -325,13 +333,15 @@ const buildTreeFromCollections = (
         id: collection.id,
         children: [],
         hasChildren: false,
-        isExpanded: false,
+        isExpanded: tree?.items[collection.id as number]?.isExpanded || false,
         data: {
           id: collection.id,
           parentId: collection.parentId,
           name: collection.name,
           description: collection.description,
           color: collection.color,
+          icon: collection.icon,
+          iconWeight: collection.iconWeight,
           isPublic: collection.isPublic,
           ownerId: collection.ownerId,
           createdAt: collection.createdAt,

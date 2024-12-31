@@ -21,6 +21,19 @@ type LinksAndCollectionAndOwner = Link & {
 const BROWSER_TIMEOUT = Number(process.env.BROWSER_TIMEOUT) || 5;
 
 export default async function archiveHandler(link: LinksAndCollectionAndOwner) {
+  if (process.env.DISABLE_PRESERVATION === "true")
+    return await prisma.link.update({
+      where: { id: link.id },
+      data: {
+        lastPreserved: new Date().toISOString(),
+        readable: "unavailable",
+        image: "unavailable",
+        monolith: "unavailable",
+        pdf: "unavailable",
+        preview: "unavailable",
+      },
+    });
+
   const timeoutPromise = new Promise((_, reject) => {
     setTimeout(
       () =>
@@ -42,6 +55,10 @@ export default async function archiveHandler(link: LinksAndCollectionAndOwner) {
       username: process.env.PROXY_USERNAME,
       password: process.env.PROXY_PASSWORD,
     };
+  }
+  if (process.env.PLAYWRIGHT_LAUNCH_OPTIONS_EXECUTABLE_PATH) {
+    browserOptions.executablePath =
+      process.env.PLAYWRIGHT_LAUNCH_OPTIONS_EXECUTABLE_PATH;
   }
 
   const browser = await chromium.launch(browserOptions);
