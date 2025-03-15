@@ -7,7 +7,6 @@ import { resizeImage } from "@/lib/client/resizeImage";
 import ProfilePhoto from "@/components/ProfilePhoto";
 import SubmitButton from "@/components/SubmitButton";
 import React from "react";
-import { MigrationFormat, MigrationRequest } from "@/types/global";
 import Link from "next/link";
 import Checkbox from "@/components/Checkbox";
 import { dropdownTriggerer } from "@/lib/client/utils";
@@ -18,8 +17,8 @@ import { useTranslation } from "next-i18next";
 import getServerSideProps from "@/lib/client/getServerSideProps";
 import { useUpdateUser, useUser } from "@/hooks/store/user";
 import { z } from "zod";
-
-const emailEnabled = process.env.NEXT_PUBLIC_EMAIL_PROVIDER;
+import ImportDropdown from "@/components/ImportDropdown";
+import { useConfig } from "@/hooks/store/config";
 
 export default function Account() {
   const [emailChangeVerificationModal, setEmailChangeVerificationModal] =
@@ -28,7 +27,7 @@ export default function Account() {
   const { data: account } = useUser();
   const updateUser = useUpdateUser();
   const [user, setUser] = useState<AccountSettings>(
-    !objectIsEmpty(account)
+    account.id
       ? account
       : ({
           // @ts-ignore
@@ -39,22 +38,27 @@ export default function Account() {
           emailVerified: null,
           password: undefined,
           image: "",
-          isPrivate: true,
+          isPrivate: false,
           // @ts-ignore
           createdAt: null,
           whitelistedUsers: [],
         } as unknown as AccountSettings)
   );
 
+  const { data: config } = useConfig();
+
   const { t } = useTranslation();
 
-  function objectIsEmpty(obj: object) {
-    return Object.keys(obj).length === 0;
-  }
+  const [whitelistedUsersTextbox, setWhiteListedUsersTextbox] = useState("");
 
   useEffect(() => {
-    if (!objectIsEmpty(account)) setUser({ ...account });
-  }, [account]);
+    if (!account.id) return;
+
+    setUser({
+      ...account,
+      whitelistedUsers: stringToArray(whitelistedUsersTextbox),
+    });
+  }, [account, whitelistedUsersTextbox]);
 
   const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -87,7 +91,7 @@ export default function Account() {
 
     const emailSchema = z.string().trim().email().toLowerCase();
     const emailValidation = emailSchema.safeParse(user.email || "");
-    if (emailEnabled && !emailValidation.success) {
+    if (config?.EMAIL_PROVIDER && !emailValidation.success) {
       return toast.error(t("email_invalid"));
     }
 
@@ -126,79 +130,9 @@ export default function Account() {
     }
   };
 
-  const importBookmarks = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    format: MigrationFormat
-  ) => {
-    const file: File | null = e.target.files && e.target.files[0];
-
-    if (file) {
-      const reader = new FileReader();
-      reader.readAsText(file, "UTF-8");
-      reader.onload = async function (e) {
-        const load = toast.loading("Importing...");
-
-        const request: string = e.target?.result as string;
-
-        const body: MigrationRequest = {
-          format,
-          data: request,
-        };
-
-        try {
-          const response = await fetch("/api/v1/migration", {
-            method: "POST",
-            body: JSON.stringify(body),
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            toast.dismiss(load);
-
-            toast.error(
-              errorData.response ||
-                "Failed to import bookmarks. Please try again."
-            );
-            return;
-          }
-
-          await response.json();
-          toast.dismiss(load);
-          toast.success("Imported the Bookmarks! Reloading the page...");
-
-          setTimeout(() => {
-            location.reload();
-          }, 2000);
-        } catch (error) {
-          console.error("Request failed", error);
-          toast.dismiss(load);
-          toast.error(
-            "An error occurred while importing bookmarks. Please check the logs for more info."
-          );
-        }
-      };
-
-      reader.onerror = function (e) {
-        console.log("Error reading file:", e);
-        toast.error(
-          "Failed to read the file. Please make sure the file is correct and try again."
-        );
-      };
-    }
-  };
-
-  const [whitelistedUsersTextbox, setWhiteListedUsersTextbox] = useState("");
-
   useEffect(() => {
     setWhiteListedUsersTextbox(account?.whitelistedUsers?.join(", "));
   }, [account]);
-
-  useEffect(() => {
-    setUser({
-      ...user,
-      whitelistedUsers: stringToArray(whitelistedUsersTextbox),
-    });
-  }, [whitelistedUsersTextbox]);
 
   const stringToArray = (str: string) => {
     return str?.replace(/\s+/g, "").split(",");
@@ -231,7 +165,7 @@ export default function Account() {
                 onChange={(e) => setUser({ ...user, username: e.target.value })}
               />
             </div>
-            {emailEnabled && (
+            {config?.EMAIL_PROVIDER && (
               <div>
                 <p className="mb-2">{t("email")}</p>
                 <TextInput
@@ -375,85 +309,7 @@ export default function Account() {
           <div className="flex gap-3 flex-col">
             <div>
               <p className="mb-2">{t("import_data")}</p>
-              <div className="dropdown dropdown-bottom">
-                <Button
-                  tabIndex={0}
-                  role="button"
-                  intent="secondary"
-                  onMouseDown={dropdownTriggerer}
-                  className="text-sm"
-                  id="import-dropdown"
-                >
-                  <i className="bi-cloud-upload text-xl duration-100"></i>
-                  {t("import_links")}
-                </Button>
-
-                <ul className="shadow menu dropdown-content z-[1] bg-base-200 border border-neutral-content rounded-box mt-1">
-                  <li>
-                    <label
-                      tabIndex={0}
-                      role="button"
-                      htmlFor="import-linkwarden-file"
-                      title={t("from_linkwarden")}
-                      className="whitespace-nowrap"
-                    >
-                      {t("from_linkwarden")}
-                      <input
-                        type="file"
-                        name="photo"
-                        id="import-linkwarden-file"
-                        accept=".json"
-                        className="hidden"
-                        onChange={(e) =>
-                          importBookmarks(e, MigrationFormat.linkwarden)
-                        }
-                      />
-                    </label>
-                  </li>
-                  <li>
-                    <label
-                      tabIndex={0}
-                      role="button"
-                      htmlFor="import-html-file"
-                      title={t("from_html")}
-                      className="whitespace-nowrap"
-                    >
-                      {t("from_html")}
-                      <input
-                        type="file"
-                        name="photo"
-                        id="import-html-file"
-                        accept=".html"
-                        className="hidden"
-                        onChange={(e) =>
-                          importBookmarks(e, MigrationFormat.htmlFile)
-                        }
-                      />
-                    </label>
-                  </li>
-                  <li>
-                    <label
-                      tabIndex={0}
-                      role="button"
-                      htmlFor="import-wallabag-file"
-                      title={t("from_wallabag")}
-                      className="whitespace-nowrap"
-                    >
-                      {t("from_wallabag")}
-                      <input
-                        type="file"
-                        name="photo"
-                        id="import-wallabag-file"
-                        accept=".json"
-                        className="hidden"
-                        onChange={(e) =>
-                          importBookmarks(e, MigrationFormat.wallabag)
-                        }
-                      />
-                    </label>
-                  </li>
-                </ul>
-              </div>
+              <ImportDropdown />
             </div>
 
             <div>
