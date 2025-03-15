@@ -10,13 +10,11 @@ import LinkActions from "@/components/LinkViews/LinkComponents/LinkActions";
 import LinkDate from "@/components/LinkViews/LinkComponents/LinkDate";
 import LinkCollection from "@/components/LinkViews/LinkComponents/LinkCollection";
 import Image from "next/image";
-import {
-  atLeastOneFormatAvailable,
-  formatAvailable,
-} from "@/lib/shared/formatStats";
+import { previewAvailable } from "@/lib/shared/getArchiveValidity";
 import Link from "next/link";
 import LinkIcon from "./LinkIcon";
 import useOnScreen from "@/hooks/useOnScreen";
+import { generateLinkHref } from "@/lib/client/generateLinkHref";
 import usePermissions from "@/hooks/usePermissions";
 import toast from "react-hot-toast";
 import LinkTypeBadge from "./LinkTypeBadge";
@@ -28,8 +26,6 @@ import useLocalSettingsStore from "@/store/localSettings";
 import clsx from "clsx";
 import LinkPin from "./LinkPin";
 import { useRouter } from "next/router";
-import LinkFormats from "./LinkFormats";
-import openLink from "@/lib/client/openLink";
 
 type Props = {
   link: LinkIncludingShortenedCollectionAndTags;
@@ -147,8 +143,6 @@ export default function LinkMasonry({ link, editMode, columns }: Props) {
     editMode &&
     (permissions === true || permissions?.canCreate || permissions?.canDelete);
 
-  const [linkModal, setLinkModal] = useState(false);
-
   return (
     <div
       ref={ref}
@@ -164,13 +158,13 @@ export default function LinkMasonry({ link, editMode, columns }: Props) {
       <div
         className="rounded-2xl cursor-pointer"
         onClick={() =>
-          !editMode && openLink(link, user, () => setLinkModal(true))
+          !editMode && window.open(generateLinkHref(link, user), "_blank")
         }
       >
-        {show.image && formatAvailable(link, "preview") && (
+        {show.image && previewAvailable(link) && (
           <div>
             <div className="relative rounded-t-2xl overflow-hidden">
-              {formatAvailable(link, "preview") ? (
+              {previewAvailable(link) ? (
                 <Image
                   src={`/api/v1/archives/${link.id}?format=${ArchivedFormat.jpeg}&preview=true&updatedAt=${link.updatedAt}`}
                   width={1280}
@@ -202,16 +196,9 @@ export default function LinkMasonry({ link, editMode, columns }: Props) {
 
         <div className="p-3 flex flex-col gap-2 h-full min-h-14">
           {show.name && (
-            <div className="hyphens-auto w-full text-primary text-sm">
+            <p className="hyphens-auto w-full text-primary text-sm">
               {unescapeString(link.name)}
-              {show.preserved_formats &&
-                link.type === "url" &&
-                atLeastOneFormatAvailable(link) && (
-                  <div className="pl-1 inline-block">
-                    <LinkFormats link={link} />
-                  </div>
-                )}
-            </div>
+            </p>
           )}
 
           {show.link && <LinkTypeBadge link={link} />}
@@ -258,12 +245,7 @@ export default function LinkMasonry({ link, editMode, columns }: Props) {
 
       {/* Overlay on hover */}
       <div className="absolute pointer-events-none top-0 left-0 right-0 bottom-0 bg-base-100 bg-opacity-0 group-hover:bg-opacity-20 group-focus-within:opacity-20 rounded-2xl duration-100"></div>
-      <LinkActions
-        link={link}
-        collection={collection}
-        linkModal={linkModal}
-        setLinkModal={(e) => setLinkModal(e)}
-      />
+      <LinkActions link={link} collection={collection} />
       {!isPublic && <LinkPin link={link} />}
     </div>
   );

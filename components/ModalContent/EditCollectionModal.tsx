@@ -7,7 +7,6 @@ import { useUpdateCollection } from "@/hooks/store/collections";
 import toast from "react-hot-toast";
 import IconPicker from "../IconPicker";
 import { IconWeight } from "@phosphor-icons/react";
-import oklchVariableToHex from "@/lib/client/oklchVariableToHex";
 
 type Props = {
   onClose: Function;
@@ -75,7 +74,7 @@ export default function EditCollectionModal({
               reset={() =>
                 setCollection({
                   ...collection,
-                  color: oklchVariableToHex("--p"),
+                  color: "#0ea5e9",
                   icon: "",
                   iconWeight: "",
                 })

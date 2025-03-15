@@ -10,12 +10,10 @@ import LinkActions from "@/components/LinkViews/LinkComponents/LinkActions";
 import LinkDate from "@/components/LinkViews/LinkComponents/LinkDate";
 import LinkCollection from "@/components/LinkViews/LinkComponents/LinkCollection";
 import Image from "next/image";
-import {
-  atLeastOneFormatAvailable,
-  formatAvailable,
-} from "@/lib/shared/formatStats";
+import { previewAvailable } from "@/lib/shared/getArchiveValidity";
 import LinkIcon from "./LinkIcon";
 import useOnScreen from "@/hooks/useOnScreen";
+import { generateLinkHref } from "@/lib/client/generateLinkHref";
 import usePermissions from "@/hooks/usePermissions";
 import toast from "react-hot-toast";
 import LinkTypeBadge from "./LinkTypeBadge";
@@ -26,8 +24,6 @@ import { useGetLink, useLinks } from "@/hooks/store/links";
 import { useRouter } from "next/router";
 import useLocalSettingsStore from "@/store/localSettings";
 import LinkPin from "./LinkPin";
-import LinkFormats from "./LinkFormats";
-import openLink from "@/lib/client/openLink";
 
 type Props = {
   link: LinkIncludingShortenedCollectionAndTags;
@@ -119,8 +115,6 @@ export default function LinkCard({ link, columns, editMode }: Props) {
   const router = useRouter();
   const isPublicRoute = router.pathname.startsWith("/public") ? true : false;
 
-  const [linkModal, setLinkModal] = useState(false);
-
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
 
@@ -169,7 +163,7 @@ export default function LinkCard({ link, columns, editMode }: Props) {
       <div
         className="rounded-2xl cursor-pointer h-full flex flex-col justify-between"
         onClick={() =>
-          !editMode && openLink(link, user, () => setLinkModal(true))
+          !editMode && window.open(generateLinkHref(link, user), "_blank")
         }
       >
         {show.image && (
@@ -177,7 +171,7 @@ export default function LinkCard({ link, columns, editMode }: Props) {
             <div
               className={`relative rounded-t-2xl ${imageHeightClass} overflow-hidden`}
             >
-              {formatAvailable(link, "preview") ? (
+              {previewAvailable(link) ? (
                 <Image
                   src={`/api/v1/archives/${link.id}?format=${ArchivedFormat.jpeg}&preview=true&updatedAt=${link.updatedAt}`}
                   width={1280}
@@ -205,13 +199,6 @@ export default function LinkCard({ link, columns, editMode }: Props) {
                   <LinkIcon link={link} />
                 </div>
               )}
-              {show.preserved_formats &&
-                link.type === "url" &&
-                atLeastOneFormatAvailable(link) && (
-                  <div className="absolute bottom-0 right-0 m-2 bg-base-200 bg-opacity-60 px-1 rounded-md">
-                    <LinkFormats link={link} />
-                  </div>
-                )}
             </div>
             <hr className="divider my-0 border-t border-neutral-content h-[1px]" />
           </div>
@@ -247,12 +234,7 @@ export default function LinkCard({ link, columns, editMode }: Props) {
 
       {/* Overlay on hover */}
       <div className="absolute pointer-events-none top-0 left-0 right-0 bottom-0 bg-base-100 bg-opacity-0 group-hover:bg-opacity-20 group-focus-within:opacity-20 rounded-2xl duration-100"></div>
-      <LinkActions
-        link={link}
-        collection={collection}
-        linkModal={linkModal}
-        setLinkModal={(e) => setLinkModal(e)}
-      />
+      <LinkActions link={link} collection={collection} />
       {!isPublicRoute && <LinkPin link={link} />}
     </div>
   );

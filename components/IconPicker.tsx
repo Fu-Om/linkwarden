@@ -48,12 +48,15 @@ const IconPicker = ({
             icon={iconName}
             size={60}
             weight={(weight || "regular") as IconWeight}
-            color={color}
+            color={color || "#0ea5e9"}
           />
         ) : !iconName && hideDefaultIcon ? (
           <p className="p-1">{t("set_custom_icon")}</p>
         ) : (
-          <i className="bi-folder-fill text-6xl" style={{ color: color }}></i>
+          <i
+            className="bi-folder-fill text-6xl"
+            style={{ color: color || "#0ea5e9" }}
+          ></i>
         )}
       </div>
       {iconPicker && (

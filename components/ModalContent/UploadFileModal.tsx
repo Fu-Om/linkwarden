@@ -15,7 +15,6 @@ import { useTranslation } from "next-i18next";
 import { useCollections } from "@/hooks/store/collections";
 import { useUploadFile } from "@/hooks/store/links";
 import { PostLinkSchemaType } from "@/lib/shared/schemaValidation";
-import { useConfig } from "@/hooks/store/config";
 
 type Props = {
   onClose: Function;
@@ -23,7 +22,7 @@ type Props = {
 
 export default function UploadFileModal({ onClose }: Props) {
   const { t } = useTranslation();
-  const { data: config } = useConfig();
+  const { data } = useSession();
 
   const initial = {
     name: "",
@@ -150,7 +149,7 @@ export default function UploadFileModal({ onClose }: Props) {
           </label>
           <p className="text-xs font-semibold mt-2">
             {t("file_types", {
-              size: config?.MAX_FILE_BUFFER || 10,
+              size: process.env.NEXT_PUBLIC_MAX_FILE_BUFFER || 10,
             })}
           </p>
         </div>

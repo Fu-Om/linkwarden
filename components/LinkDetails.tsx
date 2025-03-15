@@ -5,9 +5,12 @@ import {
 } from "@/types/global";
 import Link from "next/link";
 import {
-  atLeastOneFormatAvailable,
-  formatAvailable,
-} from "@/lib/shared/formatStats";
+  pdfAvailable,
+  readabilityAvailable,
+  monolithAvailable,
+  screenshotAvailable,
+  previewAvailable,
+} from "@/lib/shared/getArchiveValidity";
 import PreservedFormatRow from "@/components/PreserverdFormatRow";
 import getPublicUserData from "@/lib/client/getPublicUserData";
 import { useTranslation } from "next-i18next";
@@ -32,7 +35,6 @@ import unescapeString from "@/lib/client/unescapeString";
 import IconPopover from "./IconPopover";
 import TextInput from "./TextInput";
 import usePermissions from "@/hooks/usePermissions";
-import oklchVariableToHex from "@/lib/client/oklchVariableToHex";
 
 type Props = {
   className?: string;
@@ -100,10 +102,26 @@ export default function LinkDetails({
   const isReady = () => {
     return (
       link &&
-      (collectionOwner.archiveAsScreenshot === true ? link.pdf : true) &&
-      (collectionOwner.archiveAsMonolith === true ? link.monolith : true) &&
-      (collectionOwner.archiveAsPDF === true ? link.pdf : true) &&
-      link.readable
+      (collectionOwner.archiveAsScreenshot === true
+        ? link.pdf && link.pdf !== "pending"
+        : true) &&
+      (collectionOwner.archiveAsMonolith === true
+        ? link.monolith && link.monolith !== "pending"
+        : true) &&
+      (collectionOwner.archiveAsPDF === true
+        ? link.pdf && link.pdf !== "pending"
+        : true) &&
+      link.readable &&
+      link.readable !== "pending"
+    );
+  };
+
+  const atLeastOneFormatAvailable = () => {
+    return (
+      screenshotAvailable(link) ||
+      pdfAvailable(link) ||
+      readabilityAvailable(link) ||
+      monolithAvailable(link)
     );
   };
 
@@ -199,7 +217,7 @@ export default function LinkDetails({
               : "-mx-4 -mt-4"
           )}
         >
-          {formatAvailable(link, "preview") ? (
+          {previewAvailable(link) ? (
             <Image
               src={`/api/v1/archives/${link.id}?format=${ArchivedFormat.jpeg}&preview=true&updatedAt=${link.updatedAt}`}
               width={1280}
@@ -274,7 +292,7 @@ export default function LinkDetails({
             </div>
             {iconPopover && (
               <IconPopover
-                color={link.color || oklchVariableToHex("--p")}
+                color={link.color || "#006796"}
                 setColor={(color: string) => setLink({ ...link, color })}
                 weight={(link.iconWeight || "regular") as IconWeight}
                 setWeight={(iconWeight: string) =>
@@ -519,7 +537,7 @@ export default function LinkDetails({
               </div>
 
               <div className={`flex flex-col rounded-md p-3 bg-base-200`}>
-                {formatAvailable(link, "monolith") ? (
+                {monolithAvailable(link) ? (
                   <>
                     <PreservedFormatRow
                       name={t("webpage")}
@@ -532,7 +550,7 @@ export default function LinkDetails({
                   </>
                 ) : undefined}
 
-                {formatAvailable(link, "image") ? (
+                {screenshotAvailable(link) ? (
                   <>
                     <PreservedFormatRow
                       name={t("screenshot")}
@@ -549,7 +567,7 @@ export default function LinkDetails({
                   </>
                 ) : undefined}
 
-                {formatAvailable(link, "pdf") ? (
+                {pdfAvailable(link) ? (
                   <>
                     <PreservedFormatRow
                       name={t("pdf")}
@@ -562,7 +580,7 @@ export default function LinkDetails({
                   </>
                 ) : undefined}
 
-                {formatAvailable(link, "readable") ? (
+                {readabilityAvailable(link) ? (
                   <>
                     <PreservedFormatRow
                       name={t("readable")}
@@ -574,7 +592,7 @@ export default function LinkDetails({
                   </>
                 ) : undefined}
 
-                {!isReady() && !atLeastOneFormatAvailable(link) ? (
+                {!isReady() && !atLeastOneFormatAvailable() ? (
                   <div
                     className={`w-full h-full flex flex-col justify-center p-10`}
                   >
@@ -591,9 +609,7 @@ export default function LinkDetails({
                       {t("check_back_later")}
                     </p>
                   </div>
-                ) : link.url &&
-                  !isReady() &&
-                  atLeastOneFormatAvailable(link) ? (
+                ) : link.url && !isReady() && atLeastOneFormatAvailable() ? (
                   <div
                     className={`w-full h-full flex flex-col justify-center p-5`}
                   >

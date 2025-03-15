@@ -8,7 +8,6 @@ import { useCreateCollection } from "@/hooks/store/collections";
 import toast from "react-hot-toast";
 import IconPicker from "../IconPicker";
 import { IconWeight } from "@phosphor-icons/react";
-import oklchVariableToHex from "@/lib/client/oklchVariableToHex";
 
 type Props = {
   onClose: Function;
@@ -17,19 +16,18 @@ type Props = {
 
 export default function NewCollectionModal({ onClose, parent }: Props) {
   const { t } = useTranslation();
-
   const initial = {
     parentId: parent?.id,
     name: "",
     description: "",
-    color: oklchVariableToHex("--p"), // Use resolved color
+    color: "#0ea5e9",
   } as Partial<Collection>;
 
   const [collection, setCollection] = useState<Partial<Collection>>(initial);
 
   useEffect(() => {
     setCollection(initial);
-  }, [parent]);
+  }, []);
 
   const [submitLoader, setSubmitLoader] = useState(false);
 
@@ -77,7 +75,7 @@ export default function NewCollectionModal({ onClose, parent }: Props) {
         <div className="flex flex-col gap-3">
           <div className="flex gap-3 items-end">
             <IconPicker
-              color={collection.color || oklchVariableToHex("--p")}
+              color={collection.color || "#0ea5e9"}
               setColor={(color: string) =>
                 setCollection({ ...collection, color })
               }
@@ -92,7 +90,7 @@ export default function NewCollectionModal({ onClose, parent }: Props) {
               reset={() =>
                 setCollection({
                   ...collection,
-                  color: oklchVariableToHex("--p"),
+                  color: "#0ea5e9",
                   icon: "",
                   iconWeight: "",
                 })

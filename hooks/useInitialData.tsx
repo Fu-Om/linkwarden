@@ -5,6 +5,7 @@ import useLocalSettingsStore from "@/store/localSettings";
 export default function useInitialData() {
   const { status, data } = useSession();
   const { setSettings } = useLocalSettingsStore();
+
   useEffect(() => {
     setSettings();
   }, [status, data]);

@@ -5,7 +5,6 @@ import { Options } from "./types";
 import CreatableSelect from "react-select/creatable";
 import Select from "react-select";
 import { useCollections } from "@/hooks/store/collections";
-import clsx from "clsx";
 
 type Props = {
   onChange: any;
@@ -19,7 +18,6 @@ type Props = {
   creatable?: boolean;
   autoFocus?: boolean;
   onBlur?: any;
-  className?: string;
 };
 
 export default function CollectionSelection({
@@ -29,7 +27,6 @@ export default function CollectionSelection({
   creatable = true,
   autoFocus,
   onBlur,
-  className,
 }: Props) {
   const { data: collections = [] } = useCollections();
 
@@ -106,7 +103,7 @@ export default function CollectionSelection({
     return (
       <CreatableSelect
         isClearable={false}
-        className={clsx("react-select-container", className)}
+        className="react-select-container"
         classNamePrefix="react-select"
         onChange={onChange}
         options={options}
@@ -124,7 +121,7 @@ export default function CollectionSelection({
     return (
       <Select
         isClearable={false}
-        className={clsx("react-select-container", className)}
+        className="react-select-container"
         classNamePrefix="react-select"
         onChange={onChange}
         options={options}

@@ -5,7 +5,6 @@ import React, { useState } from "react";
 import Icon from "@/components/Icon";
 import { IconWeight } from "@phosphor-icons/react";
 import clsx from "clsx";
-import oklchVariableToHex from "@/lib/client/oklchVariableToHex";
 
 export default function LinkIcon({
   link,
@@ -20,8 +19,7 @@ export default function LinkIcon({
 }) {
   let iconClasses: string = clsx(
     "rounded flex item-center justify-center shadow select-none z-10 w-12 h-12",
-    !hideBackground &&
-      "rounded-md backdrop-blur-xl bg-white/30 dark:bg-black/30 bg-opacity-50 p-1",
+    !hideBackground && "rounded-md bg-white backdrop-blur-lg bg-opacity-50 p-1",
     className
   );
 
@@ -38,7 +36,7 @@ export default function LinkIcon({
             icon={link.icon}
             size={30}
             weight={(link.iconWeight || "regular") as IconWeight}
-            color={link.color || oklchVariableToHex("--p")}
+            color={link.color || "#006796"}
             className="m-auto"
           />
         </div>
@@ -94,12 +92,7 @@ const LinkPlaceholderIcon = ({
   icon: string;
 }) => {
   return (
-    <div
-      className={clsx(
-        iconClasses,
-        "aspect-square text-4xl text-[oklch(var(--p))]"
-      )}
-    >
+    <div className={clsx(iconClasses, "aspect-square text-4xl text-[#006796]")}>
       <i className={`${icon} m-auto`}></i>
     </div>
   );

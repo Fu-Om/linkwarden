@@ -1,5 +1,4 @@
 import DeleteUserModal from "@/components/ModalContent/DeleteUserModal";
-import { useConfig } from "@/hooks/store/config";
 import { User as U } from "@prisma/client";
 import { TFunction } from "i18next";
 
@@ -8,26 +7,18 @@ interface User extends U {
     active: boolean;
   };
 }
+
 type UserModal = {
   isOpen: boolean;
   userId: number | null;
 };
 
-interface UserListingProps {
-  users: User[];
-  deleteUserModal: UserModal;
-  setDeleteUserModal: (modal: UserModal) => void;
-  t: TFunction<"translation", undefined>;
-}
-
-const UserListing: React.FC<UserListingProps> = ({
-  users,
-  deleteUserModal,
-  setDeleteUserModal,
-  t,
-}) => {
-  const { data: config } = useConfig();
-
+const UserListing = (
+  users: User[],
+  deleteUserModal: UserModal,
+  setDeleteUserModal: Function,
+  t: TFunction<"translation", undefined>
+) => {
   return (
     <div className="overflow-x-auto whitespace-nowrap w-full">
       <table className="table w-full">
@@ -35,7 +26,9 @@ const UserListing: React.FC<UserListingProps> = ({
           <tr>
             <th></th>
             <th>{t("username")}</th>
-            {config?.EMAIL_PROVIDER && <th>{t("email")}</th>}
+            {process.env.NEXT_PUBLIC_EMAIL_PROVIDER === "true" && (
+              <th>{t("email")}</th>
+            )}
             {process.env.NEXT_PUBLIC_STRIPE === "true" && (
               <th>{t("subscribed")}</th>
             )}
@@ -53,7 +46,9 @@ const UserListing: React.FC<UserListingProps> = ({
               <td>
                 {user.username ? user.username : <b>{t("not_available")}</b>}
               </td>
-              {config?.EMAIL_PROVIDER && <td>{user.email}</td>}
+              {process.env.NEXT_PUBLIC_EMAIL_PROVIDER === "true" && (
+                <td>{user.email}</td>
+              )}
               {process.env.NEXT_PUBLIC_STRIPE === "true" && (
                 <td>
                   {user.subscriptions?.active ? (

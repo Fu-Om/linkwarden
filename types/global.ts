@@ -108,7 +108,6 @@ interface CollectionIncludingLinks extends Collection {
 
 export interface Backup extends Omit<User, "password" | "id"> {
   collections: CollectionIncludingLinks[];
-  pinnedLinks: LinksIncludingTags[];
 }
 
 export type MigrationRequest = {
@@ -120,7 +119,6 @@ export enum MigrationFormat {
   linkwarden,
   htmlFile,
   wallabag,
-  omnivore,
 }
 
 export enum Plan {

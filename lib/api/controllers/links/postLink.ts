@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/api/db";
 import fetchTitleAndHeaders from "@/lib/shared/fetchTitleAndHeaders";
 import createFolder from "@/lib/api/storage/createFolder";
-import setCollection from "../../setCollection";
+import setLinkCollection from "../../setLinkCollection";
 import {
   PostLinkSchema,
   PostLinkSchemaType,
@@ -25,11 +25,7 @@ export default async function postLink(
 
   const link = dataValidation.data;
 
-  const linkCollection = await setCollection({
-    userId,
-    collectionId: link.collection?.id,
-    collectionName: link.collection?.name,
-  });
+  const linkCollection = await setLinkCollection(link, userId);
 
   if (!linkCollection)
     return { response: "Collection is not accessible.", status: 400 };
@@ -66,14 +62,12 @@ export default async function postLink(
 
   if (hasTooManyLinks) {
     return {
-      response: `Your subscription has reached the maximum number of links allowed.`,
+      response: `Your subscription have reached the maximum number of links allowed.`,
       status: 400,
     };
   }
 
-  const { title = "", headers = new Headers() } = link.url
-    ? await fetchTitleAndHeaders(link.url)
-    : {};
+  const { title, headers } = await fetchTitleAndHeaders(link.url || "");
 
   const name =
     link.name && link.name !== "" ? link.name : link.url ? title : "";
@@ -128,17 +122,6 @@ export default async function postLink(
       },
     },
     include: { tags: true, collection: true },
-  });
-
-  await prisma.link.update({
-    where: { id: newLink.id },
-    data: {
-      image: link.image
-        ? `archives/${newLink.collectionId}/${newLink.id}.${
-            link.image === "png" ? "png" : "jpeg"
-          }`
-        : undefined,
-    },
   });
 
   createFolder({ filePath: `archives/${newLink.collectionId}` });

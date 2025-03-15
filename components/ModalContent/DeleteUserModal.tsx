@@ -4,7 +4,6 @@ import { useTranslation } from "next-i18next";
 import { useDeleteUser } from "@/hooks/store/admin/users";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { useConfig } from "@/hooks/store/config";
 
 type Props = {
   onClose: Function;
@@ -33,10 +32,7 @@ export default function DeleteUserModal({ onClose, userId }: Props) {
   };
 
   const { data } = useSession();
-
-  const { data: config } = useConfig();
-
-  const isAdmin = data?.user?.id === config?.ADMIN;
+  const isAdmin = data?.user?.id === Number(process.env.NEXT_PUBLIC_ADMIN);
 
   return (
     <Modal toggleModal={onClose}>

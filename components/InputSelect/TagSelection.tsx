@@ -3,7 +3,6 @@ import CreatableSelect from "react-select/creatable";
 import { styles } from "./styles";
 import { Options } from "./types";
 import { useTags } from "@/hooks/store/tags";
-import { useTranslation } from "next-i18next";
 
 type Props = {
   onChange: any;
@@ -22,7 +21,6 @@ export default function TagSelection({
   onBlur,
 }: Props) {
   const { data: tags = [] } = useTags();
-  const { t } = useTranslation();
 
   const [options, setOptions] = useState<Options[]>([]);
 
@@ -43,7 +41,6 @@ export default function TagSelection({
       options={options}
       styles={styles}
       defaultValue={defaultValue}
-      placeholder={t("tag_selection_placeholder")}
       isMulti
       autoFocus={autoFocus}
       onBlur={onBlur}
