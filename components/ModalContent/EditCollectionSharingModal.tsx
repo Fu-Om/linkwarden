@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from "react";
 import TextInput from "@/components/TextInput";
 import toast from "react-hot-toast";
-import {
-  AccountSettings,
-  CollectionIncludingMembersAndLinkCount,
-  Member,
-} from "@/types/global";
+import { CollectionIncludingMembersAndLinkCount, Member } from "@/types/global";
 import getPublicUserData from "@/lib/client/getPublicUserData";
 import usePermissions from "@/hooks/usePermissions";
 import ProfilePhoto from "../ProfilePhoto";
@@ -15,8 +11,6 @@ import { dropdownTriggerer } from "@/lib/client/utils";
 import { useTranslation } from "next-i18next";
 import { useUpdateCollection } from "@/hooks/store/collections";
 import { useUser } from "@/hooks/store/user";
-import CopyButton from "../CopyButton";
-import { useRouter } from "next/router";
 
 type Props = {
   onClose: Function;
@@ -46,7 +40,6 @@ export default function EditCollectionSharingModal({
 
       await updateCollection.mutateAsync(collection, {
         onSettled: (data, error) => {
-          setSubmitLoader(false);
           toast.dismiss(load);
 
           if (error) {
@@ -57,6 +50,8 @@ export default function EditCollectionSharingModal({
           }
         },
       });
+
+      setSubmitLoader(false);
     }
   };
 
@@ -67,11 +62,17 @@ export default function EditCollectionSharingModal({
 
   const publicCollectionURL = `${currentURL.origin}/public/collections/${collection.id}`;
 
-  const [memberIdentifier, setMemberIdentifier] = useState("");
+  const [memberUsername, setMemberUsername] = useState("");
 
-  const [collectionOwner, setCollectionOwner] = useState<
-    Partial<AccountSettings>
-  >({});
+  const [collectionOwner, setCollectionOwner] = useState({
+    id: null as unknown as number,
+    name: "",
+    username: "",
+    image: "",
+    archiveAsScreenshot: undefined as unknown as boolean,
+    archiveAsMonolith: undefined as unknown as boolean,
+    archiveAsPDF: undefined as unknown as boolean,
+  });
 
   useEffect(() => {
     const fetchOwner = async () => {
@@ -92,25 +93,19 @@ export default function EditCollectionSharingModal({
       members: [...collection.members, newMember],
     });
 
-    setMemberIdentifier("");
+    setMemberUsername("");
   };
-
-  const router = useRouter();
-
-  const isPublicRoute = router.pathname.startsWith("/public") ? true : false;
 
   return (
     <Modal toggleModal={onClose}>
       <p className="text-xl font-thin">
-        {permissions === true && !isPublicRoute
-          ? t("share_and_collaborate")
-          : t("team")}
+        {permissions === true ? t("share_and_collaborate") : t("team")}
       </p>
 
       <div className="divider mb-3 mt-1"></div>
 
       <div className="flex flex-col gap-3">
-        {permissions === true && !isPublicRoute && (
+        {permissions === true && (
           <div>
             <p>{t("make_collection_public")}</p>
 
@@ -137,35 +132,43 @@ export default function EditCollectionSharingModal({
           </div>
         )}
 
-        {collection.isPublic && (
-          <div>
-            <p className="mb-2">{t("sharable_link")}</p>
-            <div className="w-full hide-scrollbar overflow-x-auto whitespace-nowrap rounded-md p-2 bg-base-200 border-neutral-content border-solid border flex items-center gap-2 justify-between">
+        {collection.isPublic ? (
+          <div className={permissions === true ? "pl-5" : ""}>
+            <p className="mb-2">{t("sharable_link_guide")}</p>
+            <div
+              onClick={() => {
+                try {
+                  navigator.clipboard
+                    .writeText(publicCollectionURL)
+                    .then(() => toast.success(t("copied")));
+                } catch (err) {
+                  console.log(err);
+                }
+              }}
+              className="w-full hide-scrollbar overflow-x-auto whitespace-nowrap rounded-md p-2 bg-base-200 border-neutral-content border-solid border outline-none hover:border-primary dark:hover:border-primary duration-100 cursor-text"
+            >
               {publicCollectionURL}
-              <CopyButton text={publicCollectionURL} />
             </div>
           </div>
-        )}
+        ) : null}
 
-        {permissions === true && !isPublicRoute && (
-          <div className="divider my-3"></div>
-        )}
+        {permissions === true && <div className="divider my-3"></div>}
 
-        {permissions === true && !isPublicRoute && (
+        {permissions === true && (
           <>
             <p>{t("members")}</p>
 
             <div className="flex items-center gap-2">
               <TextInput
-                value={memberIdentifier || ""}
+                value={memberUsername || ""}
                 className="bg-base-200"
-                placeholder={t("add_member_placeholder")}
-                onChange={(e) => setMemberIdentifier(e.target.value)}
+                placeholder={t("members_username_placeholder")}
+                onChange={(e) => setMemberUsername(e.target.value)}
                 onKeyDown={(e) =>
                   e.key === "Enter" &&
                   addMemberToCollection(
-                    user,
-                    memberIdentifier.replace(/^@/, "") || "",
+                    user.username as string,
+                    memberUsername || "",
                     collection,
                     setMemberState,
                     t
@@ -176,8 +179,8 @@ export default function EditCollectionSharingModal({
               <div
                 onClick={() =>
                   addMemberToCollection(
-                    user,
-                    memberIdentifier.replace(/^@/, "") || "",
+                    user.username as string,
+                    memberUsername || "",
                     collection,
                     setMemberState,
                     t
@@ -263,7 +266,7 @@ export default function EditCollectionSharingModal({
                           </div>
 
                           <div className={"flex items-center gap-2"}>
-                            {permissions === true && !isPublicRoute ? (
+                            {permissions === true ? (
                               <div className="dropdown dropdown-bottom dropdown-end">
                                 <div
                                   tabIndex={0}
@@ -424,7 +427,7 @@ export default function EditCollectionSharingModal({
                               </p>
                             )}
 
-                            {permissions === true && !isPublicRoute && (
+                            {permissions === true && (
                               <i
                                 className={
                                   "bi-x text-xl btn btn-sm btn-square btn-ghost text-neutral hover:text-red-500 dark:hover:text-red-500 duration-100 cursor-pointer"
@@ -455,7 +458,7 @@ export default function EditCollectionSharingModal({
           </>
         )}
 
-        {permissions === true && !isPublicRoute && (
+        {permissions === true && (
           <button
             className="btn btn-accent dark:border-violet-400 text-white w-fit ml-auto mt-3"
             onClick={submit}

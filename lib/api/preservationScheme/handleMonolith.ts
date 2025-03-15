@@ -8,7 +8,7 @@ const handleMonolith = async (link: Link, content: string) => {
 
   try {
     let html = execSync(
-      `monolith - -I -b "${link.url}" ${
+      `monolith - -I -b ${link.url} ${
         process.env.MONOLITH_CUSTOM_OPTIONS || "-j -F -s"
       } -o -`,
       {
@@ -39,7 +39,7 @@ const handleMonolith = async (link: Link, content: string) => {
       });
     });
   } catch (err) {
-    console.log("Uncaught Monolith error...");
+    console.log("Error running MONOLITH:", err);
   }
 };
 

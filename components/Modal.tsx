@@ -32,25 +32,28 @@ export default function Modal({
     return (
       <Drawer.Root
         open={drawerIsOpen}
-        onClose={() => dismissible && setDrawerIsOpen(false)}
-        onAnimationEnd={(isOpen) => !isOpen && toggleModal()}
+        onClose={() => dismissible && setTimeout(() => toggleModal(), 100)}
         dismissible={dismissible}
       >
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 bg-black/40" />
-          <Drawer.Content className="flex flex-col rounded-t-2xl h-[90%] mt-24 fixed bottom-0 left-0 right-0 z-30">
-            <div
-              className="p-4 bg-base-100 rounded-t-2xl flex-1 border-neutral-content border-t overflow-y-auto"
-              data-testid="mobile-modal-container"
-            >
+          <ClickAwayHandler
+            onClickOutside={() => dismissible && setDrawerIsOpen(false)}
+          >
+            <Drawer.Content className="flex flex-col rounded-t-2xl min-h-max mt-24 fixed bottom-0 left-0 right-0 z-30">
               <div
-                className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-neutral mb-5"
-                data-testid="mobile-modal-slider"
-              />
+                className="p-4 bg-base-100 rounded-t-2xl flex-1 border-neutral-content border-t overflow-y-auto"
+                data-testid="mobile-modal-container"
+              >
+                <div
+                  className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-neutral mb-5"
+                  data-testid="mobile-modal-slider"
+                />
 
-              {children}
-            </div>
-          </Drawer.Content>
+                {children}
+              </div>
+            </Drawer.Content>
+          </ClickAwayHandler>
         </Drawer.Portal>
       </Drawer.Root>
     );
